@@ -51,6 +51,7 @@ public class CommandGroups {
     register = new RegisterGroup();
     file = new FileGroup();
     search = new SearchGroup();
+    sort = new SortGroup();
     process = new ProcessGroup();
     macro = new MacroGroup();
     digraph = new DigraphGroup();
@@ -118,6 +119,10 @@ public class CommandGroups {
    */
   public SearchGroup getSearch() {
     return search;
+  }
+
+  public SortGroup getSort() {
+    return sort;
   }
 
   /**
@@ -193,6 +198,7 @@ public class CommandGroups {
   private RegisterGroup register;
   private FileGroup file;
   private SearchGroup search;
+  private SortGroup sort;
   private ProcessGroup process;
   private MacroGroup macro;
   private DigraphGroup digraph;
