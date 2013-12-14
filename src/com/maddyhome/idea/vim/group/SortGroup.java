@@ -2,7 +2,10 @@ package com.maddyhome.idea.vim.group;
 
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
+import com.maddyhome.idea.vim.common.TextRange;
 import com.maddyhome.idea.vim.ex.LineRange;
+import com.maddyhome.idea.vim.ex.Ranges;
+import com.maddyhome.idea.vim.helper.EditorHelper;
 import com.maddyhome.idea.vim.regexp.CharPointer;
 
 import java.util.ArrayList;
@@ -21,7 +24,13 @@ public class SortGroup extends AbstractActionGroup {
   public static final int SORT_OCTAL = 16;
   public static final int UNIQUE = 32;
 
-  public boolean sort(Editor editor, DataContext context, LineRange range, String command, String argument) {
+  public boolean sort(Editor editor,
+                      DataContext context,
+                      LineRange range,
+                      TextRange tr,
+                      String command,
+                      String argument,
+                      Ranges ranges) {
     int flags = 0;
     boolean res = true;
     CharPointer arg = new CharPointer(new StringBuffer(argument));
@@ -40,7 +49,13 @@ public class SortGroup extends AbstractActionGroup {
           return false;
       }
     }
-    String[] text = editor.getDocument().getText().split("\n");
+    String[] text;
+    if (isRangeEmpty(ranges)) {
+      text = editor.getDocument().getText().split("\n");
+    } else {
+      text = EditorHelper.getText(editor, tr.getStartOffset(), tr.getEndOffset()).split("\n");
+    }
+
     List<String> textCol = new ArrayList<>(Arrays.asList(text));
     String outText = "";
     if (isIgnoreCase(flags)){
@@ -57,8 +72,17 @@ public class SortGroup extends AbstractActionGroup {
       outText += s + "\n";
     }
 
-    editor.getDocument().setText(outText);
+    if (isRangeEmpty(ranges)){
+      editor.getDocument().setText(outText);
+    } else {
+      editor.getDocument().replaceString(tr.getStartOffset(), tr.getEndOffset(), outText);
+    }
+
     return res;
+  }
+
+  private boolean isRangeEmpty(Ranges ranges) {
+    return ranges.size() == 0;
   }
 
   private boolean isIgnoreCase(int flags) {
