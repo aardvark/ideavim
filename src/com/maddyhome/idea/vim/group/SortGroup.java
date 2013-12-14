@@ -1,5 +1,7 @@
 package com.maddyhome.idea.vim.group;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Editor;
 import com.maddyhome.idea.vim.common.TextRange;
@@ -24,12 +26,8 @@ public class SortGroup extends AbstractActionGroup {
   public static final int SORT_OCTAL = 16;
   public static final int UNIQUE = 32;
 
-  public boolean sort(Editor editor,
-                      DataContext context,
-                      LineRange range,
-                      TextRange tr,
-                      String command,
-                      String argument,
+  public boolean sort(Editor editor, DataContext context, LineRange range,
+                      TextRange tr, String command, String argument,
                       Ranges ranges) {
     int flags = 0;
     boolean res = true;
@@ -57,6 +55,11 @@ public class SortGroup extends AbstractActionGroup {
     }
 
     List<String> textCol = new ArrayList<>(Arrays.asList(text));
+
+    if (isUnique(flags)){
+      textCol = Lists.newArrayList(Sets.newHashSet(textCol));
+    }
+
     String outText = "";
     if (isIgnoreCase(flags)){
       Collections.sort(textCol, String.CASE_INSENSITIVE_ORDER);
@@ -86,10 +89,18 @@ public class SortGroup extends AbstractActionGroup {
   }
 
   private boolean isIgnoreCase(int flags) {
-    return ((flags & IGNORE_CASE) == IGNORE_CASE);
+    return checkFlagSet(flags, IGNORE_CASE);
   }
 
   private boolean isReverse(int flags){
-    return ((flags & REVERSE) == REVERSE);
+    return checkFlagSet(flags, REVERSE);
+  }
+
+  private boolean isUnique(int flags){
+    return checkFlagSet(flags, UNIQUE);
+  }
+
+  private boolean checkFlagSet(int flags, int flag) {
+    return ((flags & flag) == flag);
   }
 }
