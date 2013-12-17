@@ -10,10 +10,9 @@ import com.maddyhome.idea.vim.ex.Ranges;
 import com.maddyhome.idea.vim.helper.EditorHelper;
 import com.maddyhome.idea.vim.regexp.CharPointer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by aardvark on 12/14/13.
@@ -21,7 +20,7 @@ import java.util.List;
 public class SortGroup extends AbstractActionGroup {
   public static final int REVERSE = 1;
   public static final int IGNORE_CASE = 2;
-  public static final int SORT_DECIMAL = 4;
+  public static final int SORT_NUMERIC= 4;
   public static final int SORT_HEX = 8;
   public static final int SORT_OCTAL = 16;
   public static final int UNIQUE = 32;
@@ -43,6 +42,9 @@ public class SortGroup extends AbstractActionGroup {
         case 'u':
           flags += UNIQUE;
           break;
+        case 'n':
+          flags += SORT_NUMERIC;
+          break;
         default:
           return false;
       }
@@ -62,9 +64,43 @@ public class SortGroup extends AbstractActionGroup {
 
     String outText = "";
     if (isIgnoreCase(flags)){
+      //TODO replace sort with collation key sort
       Collections.sort(textCol, String.CASE_INSENSITIVE_ORDER);
     } else {
       Collections.sort(textCol);
+    }
+
+    /*
+     * what numeric sort actually do
+     * 1. filter all strings in collection that contains numerics
+     * 2. sort numerics
+     * 3. dont sort remaining collection
+     * 4. join sorted numerics and collection
+     * 5. return results
+     */
+    if (checkFlagSet(flags, SORT_NUMERIC)) {
+      final Pattern pat = Pattern.compile("\\D*(\\d+).*");
+      List<String> numQueue = new ArrayList<>();
+      for (String s : textCol) {
+        if (pat.matcher(s).matches()){
+          numQueue.add(s);
+        }
+      }
+      textCol.removeAll(numQueue);
+
+      Collections.sort(numQueue, new Comparator<String>() {
+        @Override
+        public int compare(String o1, String o2) {
+          Matcher matcher = pat.matcher(o1);
+          matcher.matches();
+          int d1 = Integer.parseInt(matcher.group(1));
+          matcher = pat.matcher(o2);
+          matcher.matches();
+          int d2 = Integer.parseInt(matcher.group(1));
+          return d1 - d2;
+        }
+      });
+      textCol.addAll(numQueue);
     }
 
     if (isReverse(flags)){
