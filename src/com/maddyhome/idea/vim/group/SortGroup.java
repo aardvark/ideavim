@@ -24,6 +24,8 @@ public class SortGroup extends AbstractActionGroup {
   public static final int SORT_HEX = 8;
   public static final int SORT_OCTAL = 16;
   public static final int UNIQUE = 32;
+  public static final int SORT_BY_PATTERN = 64;
+
 
   public boolean sort(Editor editor, DataContext context, LineRange range,
                       TextRange tr, String command, String argument,
@@ -31,6 +33,7 @@ public class SortGroup extends AbstractActionGroup {
     int flags = 0;
     boolean res = true;
     CharPointer arg = new CharPointer(new StringBuffer(argument));
+    System.out.println(argument);
     while (!arg.isNul()){
       switch(arg.charAtInc()){
         case '!':
@@ -50,6 +53,9 @@ public class SortGroup extends AbstractActionGroup {
           break;
         case 'o':
           flags += SORT_OCTAL;
+          break;
+        case 'r':
+          flags += SORT_BY_PATTERN;
           break;
         default:
           return false;
@@ -89,6 +95,16 @@ public class SortGroup extends AbstractActionGroup {
     if (checkFlagSet(flags, SORT_OCTAL)){
       final Pattern pat = Pattern.compile("\\D*0([0-7]+).*");
       sortNumerics(pat, 8, stringsToSort);
+    }
+
+    /*
+     * Sorting on pattern.
+     * if pattern is set we should pass to comparator only parts that are not match
+     * If flag r is set the we should pass to comparator only part of string that actually match the pattern
+     * Main problem is that we must transform string via vim pattern
+     */
+    if (checkFlagSet(flags, SORT_BY_PATTERN)){
+      //TODO: Sort by pattern
     }
 
     if (isReverse(flags)){
