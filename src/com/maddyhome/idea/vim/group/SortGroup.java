@@ -45,6 +45,9 @@ public class SortGroup extends AbstractActionGroup {
         case 'n':
           flags += SORT_NUMERIC;
           break;
+        case 'x':
+          flags += SORT_HEX;
+          break;
         default:
           return false;
       }
@@ -93,15 +96,66 @@ public class SortGroup extends AbstractActionGroup {
         public int compare(String o1, String o2) {
           Matcher matcher = pat.matcher(o1);
           matcher.matches();
-          int d1 = Integer.parseInt(matcher.group(1));
+          int d1 = Integer.parseInt(matcher.group(1), 10);
           matcher = pat.matcher(o2);
           matcher.matches();
-          int d2 = Integer.parseInt(matcher.group(1));
+          int d2 = Integer.parseInt(matcher.group(1), 10);
           return d1 - d2;
         }
       });
       textCol.addAll(numQueue);
     }
+
+    if (checkFlagSet(flags, SORT_HEX)){
+      final Pattern pat = Pattern.compile("\\D*0x(\\p{XDigit}+).*");
+      List<String> numQueue = new ArrayList<>();
+      for (String s : textCol) {
+        if (pat.matcher(s).matches()){
+          numQueue.add(s);
+        }
+      }
+      textCol.removeAll(numQueue);
+
+      Collections.sort(numQueue, new Comparator<String>() {
+        @Override
+        public int compare(String o1, String o2) {
+          Matcher matcher = pat.matcher(o1);
+          matcher.matches();
+          int d1 = Integer.parseInt(matcher.group(1), 16);
+          matcher = pat.matcher(o2);
+          matcher.matches();
+          int d2 = Integer.parseInt(matcher.group(1), 16);
+          return d1 - d2;
+        }
+      });
+      textCol.addAll(numQueue);
+    }
+
+    if (checkFlagSet(flags, SORT_OCTAL)){
+      final Pattern pat = Pattern.compile("\\D*0([0-7]+).*");
+      List<String> numQueue = new ArrayList<>();
+      for (String s : textCol) {
+        if (pat.matcher(s).matches()){
+          numQueue.add(s);
+        }
+      }
+      textCol.removeAll(numQueue);
+
+      Collections.sort(numQueue, new Comparator<String>() {
+        @Override
+        public int compare(String o1, String o2) {
+          Matcher matcher = pat.matcher(o1);
+          matcher.matches();
+          int d1 = Integer.parseInt(matcher.group(1), 8);
+          matcher = pat.matcher(o2);
+          matcher.matches();
+          int d2 = Integer.parseInt(matcher.group(1), 8);
+          return d1 - d2;
+        }
+      });
+      textCol.addAll(numQueue);
+    }
+
 
     if (isReverse(flags)){
       Collections.reverse(textCol);
