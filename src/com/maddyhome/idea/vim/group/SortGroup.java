@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 public class SortGroup extends AbstractActionGroup {
   public static final int REVERSE = 1;
   public static final int IGNORE_CASE = 2;
-  public static final int SORT_NUMERIC= 4;
+  public static final int SORT_DECIMAL = 4;
   public static final int SORT_HEX = 8;
   public static final int SORT_OCTAL = 16;
   public static final int UNIQUE = 32;
@@ -43,10 +43,13 @@ public class SortGroup extends AbstractActionGroup {
           flags += UNIQUE;
           break;
         case 'n':
-          flags += SORT_NUMERIC;
+          flags += SORT_DECIMAL;
           break;
         case 'x':
           flags += SORT_HEX;
+          break;
+        case 'o':
+          flags += SORT_OCTAL;
           break;
         default:
           return false;
@@ -73,7 +76,7 @@ public class SortGroup extends AbstractActionGroup {
       Collections.sort(stringsToSort);
     }
 
-    if (checkFlagSet(flags, SORT_NUMERIC)) {
+    if (checkFlagSet(flags, SORT_DECIMAL)) {
       final Pattern pat = Pattern.compile("\\D*(\\d+).*");
       sortNumerics(pat, 10, stringsToSort);
     }
