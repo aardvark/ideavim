@@ -59,119 +59,77 @@ public class SortGroup extends AbstractActionGroup {
       text = EditorHelper.getText(editor, tr.getStartOffset(), tr.getEndOffset()).split("\n");
     }
 
-    List<String> textCol = new ArrayList<>(Arrays.asList(text));
+    List<String> stringsToSort = new ArrayList<>(Arrays.asList(text));
 
     if (isUnique(flags)){
-      textCol = Lists.newArrayList(Sets.newHashSet(textCol));
+      stringsToSort = Lists.newArrayList(Sets.newHashSet(stringsToSort));
     }
 
-    String outText = "";
+    String sortedStrings = "";
     if (isIgnoreCase(flags)){
       //TODO replace sort with collation key sort
-      Collections.sort(textCol, String.CASE_INSENSITIVE_ORDER);
+      Collections.sort(stringsToSort, String.CASE_INSENSITIVE_ORDER);
     } else {
-      Collections.sort(textCol);
+      Collections.sort(stringsToSort);
     }
 
-    /*
-     * what numeric sort actually do
-     * 1. filter all strings in collection that contains numerics
-     * 2. sort numerics
-     * 3. dont sort remaining collection
-     * 4. join sorted numerics and collection
-     * 5. return results
-     */
     if (checkFlagSet(flags, SORT_NUMERIC)) {
       final Pattern pat = Pattern.compile("\\D*(\\d+).*");
-      List<String> numQueue = new ArrayList<>();
-      for (String s : textCol) {
-        if (pat.matcher(s).matches()){
-          numQueue.add(s);
-        }
-      }
-      textCol.removeAll(numQueue);
-
-      Collections.sort(numQueue, new Comparator<String>() {
-        @Override
-        public int compare(String o1, String o2) {
-          Matcher matcher = pat.matcher(o1);
-          matcher.matches();
-          int d1 = Integer.parseInt(matcher.group(1), 10);
-          matcher = pat.matcher(o2);
-          matcher.matches();
-          int d2 = Integer.parseInt(matcher.group(1), 10);
-          return d1 - d2;
-        }
-      });
-      textCol.addAll(numQueue);
+      sortNumerics(pat, 10, stringsToSort);
     }
 
     if (checkFlagSet(flags, SORT_HEX)){
       final Pattern pat = Pattern.compile("\\D*0x(\\p{XDigit}+).*");
-      List<String> numQueue = new ArrayList<>();
-      for (String s : textCol) {
-        if (pat.matcher(s).matches()){
-          numQueue.add(s);
-        }
-      }
-      textCol.removeAll(numQueue);
-
-      Collections.sort(numQueue, new Comparator<String>() {
-        @Override
-        public int compare(String o1, String o2) {
-          Matcher matcher = pat.matcher(o1);
-          matcher.matches();
-          int d1 = Integer.parseInt(matcher.group(1), 16);
-          matcher = pat.matcher(o2);
-          matcher.matches();
-          int d2 = Integer.parseInt(matcher.group(1), 16);
-          return d1 - d2;
-        }
-      });
-      textCol.addAll(numQueue);
+      sortNumerics(pat, 16, stringsToSort);
     }
 
     if (checkFlagSet(flags, SORT_OCTAL)){
       final Pattern pat = Pattern.compile("\\D*0([0-7]+).*");
-      List<String> numQueue = new ArrayList<>();
-      for (String s : textCol) {
-        if (pat.matcher(s).matches()){
-          numQueue.add(s);
-        }
-      }
-      textCol.removeAll(numQueue);
-
-      Collections.sort(numQueue, new Comparator<String>() {
-        @Override
-        public int compare(String o1, String o2) {
-          Matcher matcher = pat.matcher(o1);
-          matcher.matches();
-          int d1 = Integer.parseInt(matcher.group(1), 8);
-          matcher = pat.matcher(o2);
-          matcher.matches();
-          int d2 = Integer.parseInt(matcher.group(1), 8);
-          return d1 - d2;
-        }
-      });
-      textCol.addAll(numQueue);
+      sortNumerics(pat, 8, stringsToSort);
     }
-
 
     if (isReverse(flags)){
-      Collections.reverse(textCol);
+      Collections.reverse(stringsToSort);
     }
 
-    for (String s : textCol) {
-      outText += s + "\n";
+    for (String s : stringsToSort) {
+      sortedStrings += s + "\n";
     }
 
     if (isRangeEmpty(ranges)){
-      editor.getDocument().setText(outText);
+      editor.getDocument().setText(sortedStrings);
     } else {
-      editor.getDocument().replaceString(tr.getStartOffset(), tr.getEndOffset(), outText);
+      editor.getDocument().replaceString(tr.getStartOffset(), tr.getEndOffset(), sortedStrings);
     }
 
     return res;
+  }
+
+  private Comparator<String> getComparator(final Pattern pat, final int radix) {
+    return new Comparator<String>() {
+      @Override
+      public int compare(String o1, String o2) {
+        Matcher matcher = pat.matcher(o1);
+        matcher.matches();
+        int d1 = Integer.parseInt(matcher.group(1), radix);
+        matcher = pat.matcher(o2);
+        matcher.matches();
+        int d2 = Integer.parseInt(matcher.group(1), radix);
+        return d1 - d2;
+      }
+    };
+  }
+
+  private void sortNumerics(Pattern pat, int radix, List<String> textCol){
+    List<String> numList= new ArrayList<>();
+    for (String s : textCol) {
+      if (pat.matcher(s).matches()){
+        numList.add(s);
+      }
+    }
+    textCol.removeAll(numList);
+    Collections.sort(numList, getComparator(pat, radix));
+    textCol.addAll(numList);
   }
 
   private boolean isRangeEmpty(Ranges ranges) {
