@@ -9,6 +9,7 @@ import com.maddyhome.idea.vim.ex.LineRange;
 import com.maddyhome.idea.vim.ex.Ranges;
 import com.maddyhome.idea.vim.helper.EditorHelper;
 import com.maddyhome.idea.vim.regexp.CharPointer;
+import com.maddyhome.idea.vim.regexp.RegExp;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -30,10 +31,12 @@ public class SortGroup extends AbstractActionGroup {
   public boolean sort(Editor editor, DataContext context, LineRange range,
                       TextRange tr, String command, String argument,
                       Ranges ranges) {
-    int flags = 0;
+    char type = '/';
+    String pattern = "";
+
+      int flags = 0;
     boolean res = true;
     CharPointer arg = new CharPointer(new StringBuffer(argument));
-    System.out.println(argument);
     while (!arg.isNul()){
       switch(arg.charAtInc()){
         case '!':
@@ -57,10 +60,27 @@ public class SortGroup extends AbstractActionGroup {
         case 'r':
           flags += SORT_BY_PATTERN;
           break;
+        case '/':
+          /*
+          we search for pattern inside argument
+           */
+          int patternStart = arg.pointer();
+          CharPointer p = new CharPointer(argument.substring(patternStart));
+          CharPointer end = RegExp.skip_regexp(p.ref(0), type, true);
+          System.out.println(end.pointer() + " - " + p.pointer());
+          pattern = p.substring(end.pointer() - p.pointer());
+          System.out.println("Pattern:" + pattern);
+          System.out.println("arg:" + arg);
+          arg.inc(pattern.length() + 1);
+          System.out.println("newarg:" + arg);
+          break;
         default:
           return false;
       }
     }
+
+    System.out.printf("cmd: %s , arg: %s , pattern: %s , ranges: %s/n", command, argument, pattern, ranges);
+
     String[] text;
     if (isRangeEmpty(ranges)) {
       text = editor.getDocument().getText().split("\n");
